@@ -6,18 +6,28 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "eject": "react-scripts eject",
+    "test": "react-scripts test",
+    "prebuild": "node scripts/configureWebpack.js"
   },
   "dependencies": {
+    "canvas": "^2.11.2",
+    "canvas-sketch": "^0.7.7",
+    "default-passive-events": "^2.0.0",
+    "next": "14.1.0",
+    "p5": "^1.9.0",
     "react": "^18",
-    "react-dom": "^18",
-    "next": "14.1.0"
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "autoprefixer": "^10.0.1",
-    "postcss": "^8",
-    "tailwindcss": "^3.3.0",
     "eslint": "^8",
-    "eslint-config-next": "14.1.0"
+    "eslint-config-next": "14.1.0",
+    "file-loader": "^6.2.0",
+    "postcss": "^8",
+    "tailwindcss": "^3.3.0"
   }
 }

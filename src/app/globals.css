@@ -25,9 +25,39 @@ body {
     )
     rgb(var(--background-start-rgb));
 }
+/* Agregar a tu archivo de estilos */
+@keyframes split-image {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes filter-animation {
+  0% {
+    filter: opacity(0%) brightness(100%);
+  }
+  100% {
+    filter: opacity(100%) brightness(70%);
+  }
+}
+
+.animate-split-image {
+  animation: split-image 1s ease-in-out infinite;
+}
+
+.animate-filter {
+  animation: filter-animation 1s ease-in-out forwards;
+}
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+}
+.puzzle-piece {
+  display: block;
+  margin: 8px; /* Ajusta según tu preferencia para el espacio entre las piezas */
 }
