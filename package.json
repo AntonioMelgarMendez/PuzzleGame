@@ -4,13 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "eject": "react-scripts eject",
     "test": "react-scripts test",
     "prebuild": "node scripts/configureWebpack.js",
-    "predeploy": "npm run build",
+    "build": "next build",
     "deploy": "gh-pages -d build"
   },
   "dependencies": {
