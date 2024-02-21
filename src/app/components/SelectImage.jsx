@@ -2,10 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 
 const SelectImage = ({ imageUrl }) => {
   const [pieces, setPieces] = useState([]);
-  const [draggedPiece, setDraggedPiece] = useState(null);
-  const [previewPiece, setPreviewPiece] = useState(null);
+  const [selectedPiece, setSelectedPiece] = useState(null);
   const [isPuzzleSolved, setIsPuzzleSolved] = useState(false);
-  const containerRef = useRef(null);
   const originalImageRef = useRef(null);
 
   const createPieceSrc = (image, x, y, pieceWidth, pieceHeight) => {
@@ -18,136 +16,52 @@ const SelectImage = ({ imageUrl }) => {
   };
 
   const checkPuzzleSolved = () => {
-    return pieces.every((piece) => piece.index === piece.originalIndex);
+    return pieces.every((piece, index) => (
+      piece.row === Math.floor(index / 4) &&
+      piece.col === index % 4
+    ));
   };
 
-  const handleDragStart = (e, index) => {
-    e.dataTransfer.setData('text/plain', '');
-    setDraggedPiece(index);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = (e, targetIndex) => {
-    e.preventDefault();
-
-    if (draggedPiece !== null && targetIndex !== draggedPiece) {
+  const handleTouchStart = (index) => {
+    if (selectedPiece === null) {
+      setSelectedPiece(index);
+    } else {
       const updatedPieces = [...pieces];
-      [updatedPieces[targetIndex], updatedPieces[draggedPiece]] = [updatedPieces[draggedPiece], updatedPieces[targetIndex]];
+
+      // Intercambia las posiciones de las piezas seleccionadas
+      const tempPiece = { ...updatedPieces[index] };
+      updatedPieces[index] = { ...updatedPieces[selectedPiece] };
+      updatedPieces[selectedPiece] = tempPiece;
+
+      // Actualiza las coordenadas actuales después del intercambio
+      updatedPieces.forEach((piece, idx) => {
+        piece.row = Math.floor(idx / 4);
+        piece.col = idx % 4;
+      });
+
       setPieces(updatedPieces);
+      setSelectedPiece(null);
 
-      setIsPuzzleSolved(checkPuzzleSolved());
+      // Muestra las coordenadas actuales por consola después de la interacción
+      const currentCoordinates = updatedPieces.map(piece => ({ row: piece.row, col: piece.col }));
+      console.log("Coordenadas actuales después de la interacción:", currentCoordinates);
     }
-
-    setPreviewPiece(null);
-    setDraggedPiece(null);
-  };
-
-  const handleTouchStart = (e, index) => {
-    e.preventDefault();
-    setDraggedPiece(index);
-    console.log(`Touch start: Piece ${index}`);
-    // Agrega el manejador de eventos táctiles directamente al elemento de la pieza
-    e.target.addEventListener('touchmove', handleTouchMove, { passive: false });
-  };
-
-  const handleTouchMove = (e) => {
-    if (draggedPiece !== null) {
-      e.preventDefault();
-      // Resto de la lógica de manejo táctil...
-      const touchX = e.touches[0].clientX;
-      const touchY = e.touches[0].clientY;
-      console.log('Touch move:', touchX, touchY);
-    }
-  };
-
-  const handleTouchEnd = (e, targetIndex) => {
-    e.preventDefault();
-    // Resto de la lógica de manejo táctil...
-    // Elimina el manejador de eventos táctiles del elemento de la pieza
-    e.target.removeEventListener('touchmove', handleTouchMove);
-  };
-
-  const downloadImage = (dataURL, filename) => {
-    const link = document.createElement('a');
-    link.href = dataURL;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
   };
 
   const handleSetButton = () => {
-    // Generar la imagen completa uniendo las piezas
-    const reconstructedImage = reconstructImage();
+    // Obtener coordenadas actuales de las piezas
+    const currentCoordinates = pieces.map(piece => ({ row: piece.row + 1, col: piece.col + 1 }));
 
-    // Comparar la imagen completa con la imagen original sin recortar
-    const originalImage = originalImageRef.current;
+    // Obtener coordenadas correctas de las piezas
+    const correctCoordinates = pieces.map(piece => piece.originalPosition);
 
-    const isMatch = reconstructedImage === originalImage;
+    // Mostrar coordenadas por consola
+    console.log("Coordenadas actuales:", currentCoordinates);
+    console.log("Coordenadas correctas:", correctCoordinates);
 
-    // Actualizar el estado según el resultado de la comparación
-    setIsPuzzleSolved(isMatch);
-
-    // Descargar la imagen generada
-    // downloadImage(reconstructedImage, 'reconstructed_image.png');
-
-    // Descargar la imagen original sin recortar
-    // downloadImage(originalImage, 'original_image.png');
+    // Verificar si el rompecabezas está resuelto
+    setIsPuzzleSolved(checkPuzzleSolved());
   };
-
-  const reconstructImage = () => {
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    canvas.width = originalImageRef.current.width;
-    canvas.height = originalImageRef.current.height;
-
-    // Asegurémonos de que todas las imágenes se han cargado antes de dibujarlas
-    const promises = pieces.map((piece) => {
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.src = piece.imageSrc;
-        img.onload = () => {
-          console.log('Image Loaded:', img.src);
-          resolve(img);
-        };
-      });
-    });
-
-    Promise.all(promises).then((images) => {
-      images.forEach((img) => {
-        console.log('Image:', img); // Añadir un log para cada imagen
-      });
-
-      pieces.forEach((piece, index) => {
-        const col = index % 4;
-        const row = Math.floor(index / 4);
-        const pieceWidth = originalImageRef.current.width / 4;
-        const pieceHeight = originalImageRef.current.height / 3;
-
-        const img = images.find(img => img.src === piece.imageSrc);
-        console.log('Drawing Image:', img.src);
-
-        context.drawImage(img, col * pieceWidth, row * pieceHeight, pieceWidth, pieceHeight);
-      });
-      // Devolver la URL de la imagen en formato base64
-      const reconstructedDataURL = canvas.toDataURL('image/png');
-
-      console.log('Reconstructed Image URL:', reconstructedDataURL); // Añadir un log para la URL de la imagen reconstruida
-
-      // Descargar la imagen generada
-      // downloadImage(reconstructedDataURL, 'reconstructed_image.png');
-    });
-  };
-
-  useEffect(() => {
-    return () => {
-      // Limpia el manejador de eventos táctiles al desmontar el componente
-      document.removeEventListener('touchmove', handleTouchMove);
-    };
-  }, []);
 
   useEffect(() => {
     const loadAndSplitImage = async () => {
@@ -158,26 +72,33 @@ const SelectImage = ({ imageUrl }) => {
 
       const numPieces = 12;
       const cols = 4;
-      const rows = numPieces / cols;
+      const rows = 3;
       const pieceWidth = image.width / cols;
       const pieceHeight = image.height / rows;
 
       const generatedPieces = [];
 
-      // Guardar la imagen original sin recortar
+      // Guarda la imagen original sin recortar
       originalImageRef.current = createPieceSrc(image, 0, 0, image.width, image.height);
 
-      // Cortar la imagen en piezas de forma ordenada
-      for (let i = 0; i < cols; i++) {
-        for (let j = 0; j < rows; j++) {
-          const pieceSrc = createPieceSrc(image, i * pieceWidth, j * pieceHeight, pieceWidth, pieceHeight);
-          generatedPieces.push({ index: i * rows + j, imageSrc: pieceSrc });
+      // Corta la imagen en piezas de forma completamente ordenada
+      for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+          const pieceSrc = createPieceSrc(image, j * pieceWidth, i * pieceHeight, pieceWidth, pieceHeight);
+          generatedPieces.push({
+            index: i * cols + j,
+            imageSrc: pieceSrc,
+            originalPosition: { row: i, col: j },
+            row: i, // Agregar las coordenadas iniciales aquí
+            col: j, // Agregar las coordenadas iniciales aquí
+          });
         }
       }
 
-      // Mezclar las piezas
+      // Mezcla las piezas
       generatedPieces.sort(() => Math.random() - 0.5);
 
+      // Establece las piezas en su orden mezclado
       setPieces(generatedPieces);
     };
 
@@ -188,41 +109,29 @@ const SelectImage = ({ imageUrl }) => {
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-white">
-      <div className="grid grid-cols-4 gap-2 p-6 bg-gray-100 rounded-md shadow-md relative overflow-hidden max-w-3xl mx-auto" ref={containerRef}>
+      <div className="grid grid-cols-4 gap-2 p-6 bg-gray-100 rounded-md shadow-md relative overflow-hidden max-w-3xl mx-auto cursor-pointer">
         {pieces.map((piece, index) => (
           <div
+            className={`hover:scale-120 ${selectedPiece === index ? 'border-4 border-blue-500' : ''}`}
             key={index}
-            onDragOver={handleDragOver}
-            onDrop={(e) => handleDrop(e, index)}
-            onTouchStart={(e) => handleTouchStart(e, index)}
-            onTouchEnd={(e) => handleTouchEnd(e, index)}
-            style={{ touchAction: 'none' }} // Evitar desplazamiento táctil predeterminado
+            onClick={() => handleTouchStart(index)}
           >
             <img
-              src={index === draggedPiece ? previewPiece || piece.imageSrc : piece.imageSrc}
+              src={piece.imageSrc}
               alt={`Puzzle Piece ${index}`}
-              draggable
-              onDragStart={(e) => {
-                handleDragStart(e, index);
-                setPreviewPiece(piece.imageSrc);
-              }}
-              onDragEnd={() => setPreviewPiece(null)}
             />
-            {isPuzzleSolved && (
-              <p className="text-xs mt-1">
-                {`Posición: (${index % 4 + 1}, ${Math.floor(index / 4) + 1})`}
-              </p>
-            )}
           </div>
         ))}
       </div>
-      {isPuzzleSolved ? (
-        <p className="text-green-500 mt-4">¡Puzzle resuelto!</p>
-      ) : (
-        <button className="bg-blue-500 text-white py-2 px-4 rounded" onClick={handleSetButton}>Set</button>
-      )}
-      <div className="mt-4">
-        <button className="bg-blue-500 text-white py-2 px-4 rounded" onClick={() => window.location.reload()}>Refresh</button>
+      <div className="flex flex-row items-center mt-4">
+        <div className={`${
+          isPuzzleSolved ? 'text-green-500' : 'bg-blue-500 text-white'
+        } py-4 px-6 rounded cursor-pointer hover:scale-120 font-bold ml-2 mr-2`} onClick={handleSetButton}>
+          {isPuzzleSolved ? '¡Puzzle resuelto!' : 'Set'}
+        </div>
+        <div className="bg-blue-500 text-white py-4 px-4 rounded cursor-pointer ml-2 mr-2  hover:scale-120 font-bold" onClick={() => window.location.reload()}>
+          Refresh
+        </div>
       </div>
     </div>
   );
