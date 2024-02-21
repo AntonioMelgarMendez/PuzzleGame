@@ -1,4 +1,4 @@
-{
+{ "homepage": "https://AntonioMelgarMendez.github.io/PuzzleGame",
   "name": "puzzleapp",
   "version": "0.1.0",
   "private": true,
@@ -9,7 +9,9 @@
     "lint": "next lint",
     "eject": "react-scripts eject",
     "test": "react-scripts test",
-    "prebuild": "node scripts/configureWebpack.js"
+    "prebuild": "node scripts/configureWebpack.js",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build"
   },
   "dependencies": {
     "canvas": "^2.11.2",
@@ -27,6 +29,7 @@
     "eslint": "^8",
     "eslint-config-next": "14.1.0",
     "file-loader": "^6.2.0",
+    "gh-pages": "^6.1.1",
     "postcss": "^8",
     "tailwindcss": "^3.3.0"
   }
